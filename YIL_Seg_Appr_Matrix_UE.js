@@ -18,6 +18,9 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error'], function(record,
 		var checkLoc			= form.getField({id: 'custrecord_yil_seg_location'});
 		var checkClass			= form.getField({id: 'custrecord_yil_seg_class'});
 		
+
+		var testVar = '';
+
 		if( context.type == context.UserEventType.CREATE ) {
 			searchSegSetupFilter.push(search.createFilter({name: 'isinactive', operator: search.Operator.IS, values: "F"}));
 			searchSegSetupColumn.push(search.createColumn({name: "custrecord_yil_subsidiary", label: "Subsidiary"}));

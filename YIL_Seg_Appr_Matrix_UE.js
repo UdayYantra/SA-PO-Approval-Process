@@ -2,7 +2,7 @@
 * @NApiVersion 2.0
 * @NScriptType UserEventScript
 **/
-define(['N/record','N/search', 'N/ui/serverWidget', 'N/error'], function(record, search, server, error) {
+define(['N/record','N/search', 'N/ui/serverWidget', 'N/error','N/url', 'N/runtime'], function(record, search, server, error, url, runtime) {
 	function beforeLoad(context) {
 		var form				= context.form;
 		var recObj				= context.newRecord;
@@ -18,7 +18,7 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error'], function(record,
 		var checkLoc			= form.getField({id: 'custrecord_yil_seg_location'});
 		var checkClass			= form.getField({id: 'custrecord_yil_seg_class'});
 		
-		if( context.type == context.UserEventType.CREATE ) {
+		//if( context.type == context.UserEventType.CREATE ) {
 			searchSegSetupFilter.push(search.createFilter({name: 'isinactive', operator: search.Operator.IS, values: "F"}));
 			searchSegSetupColumn.push(search.createColumn({name: "custrecord_yil_subsidiary", label: "Subsidiary"}));
 			searchSegSetupColumn.push(search.createColumn({name: "custrecord_yil_departments", label: "Department"}));
@@ -41,20 +41,32 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error'], function(record,
 			log.debug({title: 'classId', details: classId});
 			
 			
-			if(!subId && checkSub) {
+			if(!subId) {
 				checkSub.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			if(!depId && checkDep) {
+			else {
+				checkSub.isMandatory = true;
+			}
+			if(!depId) {
 				checkDep.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			if(!locId && checkLoc) {
+			else {
+				checkDep.isMandatory = true;
+			}
+			if(!locId) {
 				checkLoc.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			if(!classId && checkClass) {
+			else {
+				checkLoc.isMandatory	= true;
+			}
+			if(!classId) {
 				checkClass.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-				
-		}
+			else {
+				checkClass.isMandatory	= true;
+			}
+			
+		//}
 		
 		//log.debug({title: "segIntId", details: segIntId});
 		//if(segIntId) {
@@ -152,85 +164,173 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error'], function(record,
 	
 	function afterSubmit(context) 
 	{
-		var recObj				= context.newRecord;
-		var recId				= recObj.id;
-		log.debug({title: "recId", details: recId});
-		var recLoad			= record.load({type: "customrecord_yil_seg_app_matrix", id: recId});
-		recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
-		var subsidiaryId		= recLoad.getValue({fieldId: "custrecord_yil_seg_subsidiary"});
-		var departmentId		= recLoad.getValue({fieldId: "custrecord_yil_seg_department"});
-		var classId				= recLoad.getValue({fieldId: "custrecord_yil_seg_class"});
-		var locationId			= recLoad.getValue({fieldId: "custrecord_yil_seg_location"});
+		if( context.type != context.UserEventType.DELETE ) {
+			var recObj				= context.newRecord;
+			var recId				= recObj.id;
+			log.debug({title: "recId", details: recId});
+			var recLoad				= record.load({type: "customrecord_yil_seg_app_matrix", id: recId});
+			recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
+			var subsidiaryId		= recLoad.getValue({fieldId: "custrecord_yil_seg_subsidiary"});
+			var departmentId		= recLoad.getValue({fieldId: "custrecord_yil_seg_department"});
+			var classId				= recLoad.getValue({fieldId: "custrecord_yil_seg_class"});
+			var locationId			= recLoad.getValue({fieldId: "custrecord_yil_seg_location"});
+			if( runtime.executionContext != runtime.ContextType.SUITELET ) {		
+				var searchAfterSubFilter= [];
+				var searchAfterSubColumn= [];
+				var amountLimit			= recObj.getValue({fieldId: "custrecord_yil_seg_amount"});
+				log.debug({title: "amountLimit", details: amountLimit});
+				var internalId			= '';
+				var andAbove			= '';
+				var amount				= '';
+				if(recId) {
+					searchAfterSubFilter.push(search.createFilter({name: "internalid", operator: search.Operator.NONEOF, values: recId}));
+				}
 				
-		var searchAfterSubFilter= [];
-		var searchAfterSubColumn= [];
-		var amountLimit			= recObj.getValue({fieldId: "custrecord_yil_seg_amount"});
-		log.debug({title: "amountLimit", details: amountLimit});
-		var internalId			= '';
-		var andAbove			= '';
-		var amount				= '';
-		if(recId) {
-			searchAfterSubFilter.push(search.createFilter({name: "internalid", operator: search.Operator.NONEOF, values: recId}));
-		}
-		
-		if(subsidiaryId) {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: subsidiaryId}));
-		}
-		else {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: "@NONE@"}));
-		}
-		
-		if(departmentId) {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: departmentId}));
-		}
-		else {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: "@NONE@"}));
-		}
-		
-		if(locationId) {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: locationId}));
-		}
-		else {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: "@NONE@"}));
-		}
-		
-		if(classId) {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: classId}));
-		}
-		else {
-			searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: "@NONE@"}));
-		}
-		
-		searchAfterSubColumn.push(search.createColumn({name: "internalid"}));
-		searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_amount", sort: search.Sort.DESC}));
-		searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_and_above"}));
-		log.debug({title: "searchAfterSubColumn", details: searchAfterSubColumn});
-		var afterSubSearchObj	= search.create({type: "customrecord_yil_seg_app_matrix", filters: searchAfterSubFilter, columns: searchAfterSubColumn});
-		
-		var count		= afterSubSearchObj.runPaged().count;
-		log.debug({title: "Count for AfterSubmit", details: count});
-		afterSubSearchObj.run().each(function(result){
-			internalId	= result.getValue({name: "internalid"});
-			andAbove	= result.getValue({name: "custrecord_yil_seg_and_above"});
-			amount		= result.getValue({name: "custrecord_yil_seg_amount"});
-			log.debug({title: "amount for AfterSubmit", details: amount});
-			log.debug({title: "internalId for AfterSubmit", details: internalId});
-		});
-		if(internalId) {
-			var searchRecLoad	= record.load({type: "customrecord_yil_seg_app_matrix", id: internalId});
-		}
-		if((recLoad || searchRecLoad) && amount && amountLimit) {
-			if(amountLimit > amount) {
-				searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
-				searchRecLoad.save();
-			}
-			else {
-				recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
-				searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
-				searchRecLoad.save();
+				if(subsidiaryId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: subsidiaryId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(departmentId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: departmentId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(locationId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: locationId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(classId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: classId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				searchAfterSubColumn.push(search.createColumn({name: "internalid"}));
+				searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_amount", sort: search.Sort.DESC}));
+				searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_and_above"}));
+				log.debug({title: "searchAfterSubColumn", details: searchAfterSubColumn});
+				var afterSubSearchObj	= search.create({type: "customrecord_yil_seg_app_matrix", filters: searchAfterSubFilter, columns: searchAfterSubColumn});
+				
+				var count		= afterSubSearchObj.runPaged().count;
+				log.debug({title: "Count for AfterSubmit", details: count});
+				afterSubSearchObj.run().each(function(result){
+					internalId	= result.getValue({name: "internalid"});
+					andAbove	= result.getValue({name: "custrecord_yil_seg_and_above"});
+					amount		= result.getValue({name: "custrecord_yil_seg_amount"});
+					log.debug({title: "amount for AfterSubmit", details: amount});
+					log.debug({title: "internalId for AfterSubmit", details: internalId});
+				});
+				if(internalId) {
+					var searchRecLoad	= record.load({type: "customrecord_yil_seg_app_matrix", id: internalId});
+				}
+				if((recLoad || searchRecLoad) && amount && amountLimit) {
+					if(amountLimit > amount) {
+						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
+						searchRecLoad.save();
+					}
+					else {
+						recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
+						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
+						searchRecLoad.save();
+					}
+				}
+				recLoad.save();
+				
 			}
 		}
-		recLoad.save();
+		if( context.type == context.UserEventType.DELETE ) {
+			var recObj				= context.newRecord;
+			var oldRecObj			= context.oldRecord;
+			var recId				= recObj.id;
+			log.debug({title: "recId", details: recId});
+			//var recLoad				= record.load({type: "customrecord_yil_seg_app_matrix", id: recId});
+			var subsidiaryId		= recObj.getValue({fieldId: "custrecord_yil_seg_subsidiary"});
+			var departmentId		= recObj.getValue({fieldId: "custrecord_yil_seg_department"});
+			var classId				= recObj.getValue({fieldId: "custrecord_yil_seg_class"});
+			var locationId			= recObj.getValue({fieldId: "custrecord_yil_seg_location"});
+			if( runtime.executionContext != runtime.ContextType.SUITELET ) {		
+				var searchAfterSubFilter= [];
+				var searchAfterSubColumn= [];
+				var amountLimit			= recObj.getValue({fieldId: "custrecord_yil_seg_amount"});
+				log.debug({title: "amountLimit", details: amountLimit});
+				var internalId			= [];
+				var andAbove			= [];
+				var amount				= [];
+				if(recId) {
+					searchAfterSubFilter.push(search.createFilter({name: "internalid", operator: search.Operator.NONEOF, values: recId}));
+				}
+				
+				if(subsidiaryId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: subsidiaryId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_subsidiary', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(departmentId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: departmentId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_department', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(locationId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: locationId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_location', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				if(classId) {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: classId}));
+				}
+				else {
+					searchAfterSubFilter.push(search.createFilter({name: 'custrecord_yil_seg_class', operator: search.Operator.ANYOF, values: "@NONE@"}));
+				}
+				
+				searchAfterSubColumn.push(search.createColumn({name: "internalid"}));
+				searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_amount", sort: search.Sort.DESC}));
+				searchAfterSubColumn.push(search.createColumn({name: "custrecord_yil_seg_and_above"}));
+				log.debug({title: "searchAfterSubColumn", details: searchAfterSubColumn});
+				var afterSubSearchObj	= search.create({type: "customrecord_yil_seg_app_matrix", filters: searchAfterSubFilter, columns: searchAfterSubColumn});
+				
+				var count		= afterSubSearchObj.runPaged().count;
+				log.debug({title: "Count for AfterSubmit", details: count});
+				afterSubSearchObj.run().each(function(result){
+					internalId	= result.getValue({name: "internalid"});
+					andAbove	= result.getValue({name: "custrecord_yil_seg_and_above"});
+					amount		= result.getValue({name: "custrecord_yil_seg_amount"});
+					log.debug({title: "amount for AfterSubmit", details: amount});
+					log.debug({title: "internalId for AfterSubmit", details: internalId});
+					var testVar1 = record.submitFields({type: "customrecord_yil_seg_app_matrix", id: internalId, values: {"custrecord_yil_seg_and_above": true}});
+				});
+				/*if(internalId) {
+					var searchRecLoad	= record.load({type: "customrecord_yil_seg_app_matrix", id: internalId});
+				}
+				if((recLoad || searchRecLoad) && amount && amountLimit) {
+					if(amountLimit > amount) {
+						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
+						searchRecLoad.save();
+					}
+					else {
+						recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
+						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
+						searchRecLoad.save();
+					}
+				}*/
+				//recLoad.save();
+				
+			}
+		}
 	}
 
 	

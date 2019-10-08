@@ -44,27 +44,19 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error','N/url', 'N/runtim
 			if(!subId) {
 				checkSub.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			else {
-				checkSub.isMandatory = true;
-			}
+			
 			if(!depId) {
 				checkDep.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			else {
-				checkDep.isMandatory = true;
-			}
+			
 			if(!locId) {
 				checkLoc.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			else {
-				checkLoc.isMandatory	= true;
-			}
+			
 			if(!classId) {
 				checkClass.updateDisplayType({displayType : server.FieldDisplayType.DISABLED});
 			}
-			else {
-				checkClass.isMandatory	= true;
-			}
+			
 			
 		//}
 		
@@ -313,21 +305,6 @@ define(['N/record','N/search', 'N/ui/serverWidget', 'N/error','N/url', 'N/runtim
 					log.debug({title: "internalId for AfterSubmit", details: internalId});
 					var testVar1 = record.submitFields({type: "customrecord_yil_seg_app_matrix", id: internalId, values: {"custrecord_yil_seg_and_above": true}});
 				});
-				/*if(internalId) {
-					var searchRecLoad	= record.load({type: "customrecord_yil_seg_app_matrix", id: internalId});
-				}
-				if((recLoad || searchRecLoad) && amount && amountLimit) {
-					if(amountLimit > amount) {
-						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
-						searchRecLoad.save();
-					}
-					else {
-						recLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: false});
-						searchRecLoad.setValue({fieldId: "custrecord_yil_seg_and_above", value: true});
-						searchRecLoad.save();
-					}
-				}*/
-				//recLoad.save();
 				
 			}
 		}
